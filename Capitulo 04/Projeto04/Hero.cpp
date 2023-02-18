@@ -1,4 +1,5 @@
 #include "Hero.h"
+
 Hero::Hero() {}
 Hero::~Hero() {}
 void Hero::init(std::string texture, sf::Vector2f position, float mass) {

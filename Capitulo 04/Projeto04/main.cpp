@@ -2,14 +2,41 @@
 #include "Hero.h";
 #include "Enemy.h";
 #include <vector>
+#include "Rocket.h";
 
-std::vector<Enemy*> enemies;
-float prevTime = 0.0f;
-float currentTime;
+
 
 sf::Vector2f viewSize(1366, 768);
 sf::VideoMode videoMode(viewSize.x, viewSize.y);
 sf::RenderWindow window(videoMode, "Janela usando SFML", sf::Style::Default);
+//bool playerMoving = false;
+std::vector<Rocket*> rockets;
+std::vector<Enemy*> enemies;
+sf::Texture skyTexture;
+sf::Sprite skySprite;
+sf::Texture bgTexture;
+sf::Sprite bgSprite;
+Hero hero;
+float prevTime = 0.0f;
+float currentTime;
+
+bool checkCollision(sf::Sprite sprite1, sf::Sprite sprite2) {
+	sf::FloatRect shape1 = sprite1.getGlobalBounds(); // retorna a area ocupada pela translation, rotation, scale de cada sprite para o retangulo
+	sf::FloatRect shape2 = sprite2.getGlobalBounds();
+	if (shape1.intersects(shape2)) {
+		return true;
+	}
+	return false;
+
+}
+
+void shoot() {
+	Rocket* rocket = new Rocket();
+	sf::Vector2f positionHero = hero.getSprite().getPosition();
+	rocket->init("C:/Recursos/Assets/graphics/rocket.png", positionHero, 400.0f);
+	rockets.push_back(rocket);
+}
+
 void spawnEnemy() {
 	int randLoc = rand() % 3;
 	sf::Vector2f enemyPos;
@@ -33,12 +60,6 @@ void spawnEnemy() {
 	enemy->init("C:/Recursos/Assets/graphics/enemy.png", enemyPos, speed);
 	enemies.push_back(enemy);
 };
-sf::Texture skyTexture;
-sf::Sprite skySprite;
-sf::Texture bgTexture;
-sf::Sprite bgSprite;
-//bool playerMoving = false;
-Hero hero;
 
 void update(float deltaTime) {
 	//if (playerMoving) {
@@ -46,18 +67,43 @@ void update(float deltaTime) {
 	//}
 	hero.update(deltaTime);
 	currentTime += deltaTime;
-	if (currentTime >= prevTime + 1.125f){
+	if (currentTime >= prevTime + 1.125f) {
 		spawnEnemy();
 		prevTime = currentTime;
 	};
-
+	// apagando os inimigos que passam da tela a esquerda
 	for (int i = 0; i < enemies.size(); i++) {
 		Enemy* enemy = enemies[i];
 		enemy->update(deltaTime);
 		float enemyX = enemy->getSprite().getPosition().x;
 		if (enemyX < 0) {
-			enemies.erase(enemies.begin() + i);
-			delete(enemy);
+			enemies.erase(enemies.begin() + i); // eliminando objeto do vetor
+			delete(enemy); // eliminando objeto chamando o destrutor
+		}
+	}
+	// apagando os torpedos que passam da tela a direita
+	for (int i = 0; i < rockets.size(); i++) {
+		Rocket* rocket = rockets[i];
+		rocket->update(deltaTime);
+		float rocketX = rocket->getSprite().getPosition().x;
+		if (rocketX > viewSize.x) {
+			rockets.erase(rockets.begin() + i);
+			delete(rocket);
+		}
+	}
+	for (int i = 0; i < rockets.size(); i++) {
+		for (int j = 0; j < enemies.size(); j++) {
+			Rocket* rocket = rockets[i];
+			Enemy* enemy = enemies[j];
+
+			if (checkCollision(rocket->getSprite(), enemy->getSprite())) {
+				rockets.erase(rockets.begin() + i);
+				enemies.erase(enemies.begin() + j);
+				delete(rocket);
+				delete(enemy);
+				printf(" Rocket colidiu com Enemy\n");
+			}
+
 		}
 	}
 
@@ -74,8 +120,11 @@ void updateInput() {
 			window.close();
 		}
 		if (event.type == sf::Event::KeyPressed) {
-			if (event.key.code == sf::Keyboard::Space) {
+			if (event.key.code == sf::Keyboard::Up) {
 				hero.jump(750.0f);
+			}
+			if (event.key.code == sf::Keyboard::Space) {
+				shoot();
 			}
 		}
 		//if (event.key.code == right && event.type == Pressionada) {
@@ -93,6 +142,9 @@ void draw() {
 	window.draw(hero.getSprite());
 	for (Enemy* enemy : enemies) {
 		window.draw(enemy->getSprite());
+	}
+	for (Rocket* rocket : rockets) {
+		window.draw(rocket->getSprite());
 	}
 };
 
