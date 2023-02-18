@@ -1,0 +1,6 @@
+link com o tutorial para configuração do sfml
+https://www.youtube.com/watch?v=_VgRjlvGpPk
+
+Não esquecer de incluir o path para o enviroment a cada projeto novo criado:
+Configuração modo Debug
+Propriedades do projeto -> Depuração -> Ambiente -> incluir["PATH=path do bin sfml"]
